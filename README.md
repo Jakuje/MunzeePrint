@@ -5,7 +5,7 @@ A simple script for printing your munzee QR codes
 
 Where I can try it?
 -------------------
-There is my instance running on https://munzee.dta3.com/print.php . Feel
+There is my instance running on https://munzee.dta3.com/ . Feel
 free to use it to generate your own QR codes.
 
 
