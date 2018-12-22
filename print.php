@@ -317,20 +317,20 @@ fieldset {
 				<option value="in">inches</option>
 			</select><br />
 			<label for="margin_left">Margin left:</label>
-			<input type="text" name="margin_left" id="margin_left" value="5" size="5"><br />
+			<input type="number" name="margin_left" id="margin_left" value="5"><br />
 			<label for="margin_right">Margin right:</label>
-			<input type="text" name="margin_right" id="margin_right" value="5" size="5"><br />
+			<input type="number" name="margin_right" id="margin_right" value="5"><br />
 			<label for="margin_top">Margin top:</label>
-			<input type="text" name="margin_top" id="margin_top" value="5" size="5"><br />
+			<input type="number" name="margin_top" id="margin_top" value="5"><br />
 			<label for="margin_bottom">Margin bottom:</label>
-			<input type="text" name="margin_bottom" id="margin_bottom" value="5" size="5"><br />
+			<input type="number" name="margin_bottom" id="margin_bottom" value="5"><br />
 		</fieldset>
 		<fieldset>
 			<legend>QR Code configuration</legend>
 			<label for="size">QR code size:</label>
-			<input type="text" name="size" id="size" value="18" size="5"><br />
+			<input type="number" name="size" id="size" value="18"><br />
 			<label for="padding">Padding:</label>
-			<input type="text" name="padding" id="padding" value="2" size="5"><br />
+			<input type="number" name="padding" id="padding" value="2"><br />
 			<label for="error_correction">Error correction:</label>
 			<select name="error_correction" id="error_correction">
 				<option value="L">L (~7%)</option>
@@ -346,20 +346,24 @@ fieldset {
 			</select><br />
 		</fieldset>
 		<fieldset>
-			<legend>Things around?</legend>
-			Text: <input type="text" name="text" value="230 V"><br />
+			<legend>Things around</legend>
+			<label for="text">Text:</label>
+			<input type="text" name="text" id="text" value="230 V"><br />
 			<label for="text_location">Text location:</label>
 			<select name="text_location" id="text_location">
 				<option value="top">Top</option>
 				<option value="bottom">Bottom</option>
 			</select><br />
-			Font size: <input type="text" name="font_size" value="5" size="5"><br />
+			<label for="font_size">Font size:</label>
+			<input type="number" name="font_size" id="font_size" value="5"><br />
 			<label for="color">Text/code color:</label>
 			<input type="color" name="color" id="color" value="#000000"><br />
 			<label for="background">Background color:</label>
 			<input type="color" name="background" id="background" value="#ffffff"><br />
-			Show numbers: <input type="checkbox" name="show_numbers"><br />
-			Show nicknames: <input type="checkbox" name="show_nicknames"><br />
+			<label for="show_numbers">Show numbers:</label>
+			<input type="checkbox" name="show_numbers" id="show_numbers"><br />
+			<label for="show_nicknames">Show nicknames:</label>
+			<input type="checkbox" name="show_nicknames" id="show_nicknames"><br />
 		</fieldset>
 		<fieldset>
 			<legend>Munzee Codes:</legend>
