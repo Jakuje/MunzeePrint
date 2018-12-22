@@ -1,7 +1,11 @@
 Munzee Print
 ============
 
-A simple script for printing your munzee QR codes
+A simple script for printing your munzee QR codes. It is inspired by
+similar script on qr.ite.lt but it has several improvements:
+
+ * The configuration is stored in cookies
+ * It is Open Source
 
 Where I can try it?
 -------------------
