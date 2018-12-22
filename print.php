@@ -75,6 +75,11 @@ $text_location = Array(
 	'top' => 'Top',
 	'bottom' => 'Bottom',
 );
+$text_align = Array(
+	'L' => 'Left',
+	'C' => 'Center',
+	'R' => 'Right',
+);
 
 /* Default configuration */
 $config = Array(
@@ -84,6 +89,7 @@ $config = Array(
 	'padding' => 2,
 	'error_correction' => "L",
 	'text' => "230V",
+	'text_align' => "C",
 	'text_location' => "top",
 	'background_color' => "#ffffff",
 	'image' => "none",
@@ -125,6 +131,9 @@ if (!empty($_POST)) {
 	}
 	if (isset($_POST['text'])) {
 		$config['text'] = $_POST['text'];
+	}
+	if (isset($_POST['text_align'])) {
+		$config['text_align'] = $_POST['text_align'];
 	}
 	if (isset($_POST['text_location'])) {
 		$config['text_location'] = $_POST['text_location'];
@@ -179,8 +188,6 @@ if (!empty($_POST)) {
 
 	/* For the QR code */
 	$style = Array(
-		'hpadding' => $config['padding'],
-		'vpadding' => $config['padding']
 	);
 
 	$pdf = new MyTCPDF('P', $config['units'], $config['format'], true, 'UTF-8', false);
@@ -198,11 +205,13 @@ if (!empty($_POST)) {
 		}
 	}
 
+	$fill = false;
 	$code_margin_top = 0;
 	$code_margin_bottom = 0;
 	$code_margin_left = 0;
 	$code_margin_right = 0;
 	if ($config['image'] == 'none') {
+		$fill = true;
 		$background_color = $config['background_color'];
 		if ($background_color && $background_color[0] == '#') {
 			$r = hexdec(substr($background_color, 1, 2));
@@ -222,10 +231,10 @@ if (!empty($_POST)) {
 		$config['show_numbers'] = 0;
 		$config['show_nicknames'] = 0;
 		$image_path = 'images/electro.png';
-		$code_margin_top = $config['size'] + $config['size'] / 6;
-		$code_margin_bottom = $config['size'] / 6;
-		$code_margin_left = $config['size'] / 6;
-		$code_margin_right = $config['size'] / 6;
+		$code_margin_top = $config['size'] + $config['size'] / 2;
+		$code_margin_bottom = $config['size'] / 4;
+		$code_margin_left = $config['size'] / 4;
+		$code_margin_right = $config['size'] / 4;
 	}
 
 	$border_style = NULL;
@@ -235,26 +244,31 @@ if (!empty($_POST)) {
 		$border_style = Array('dash' => 0);
 	}
 	$t = '';
-	if (!empty($config['text']) && $config['text_location'] == 'bottom') {
+	$border_height = $config['size'] + $code_margin_top + $code_margin_bottom;
+	if (empty($config['text']) || $config['text_location'] == 'bottom') {
 		$t = 'T';
+		$border_height += $config['padding'];
 	}
-	if (!empty($config['text']) && $config['text_location'] == 'top') {
+	if (empty($config['text']) || $config['text_location'] == 'top') {
 		if (!$config['show_numbers'] && !$config['show_nicknames']) {
 			$t = $t . 'B';
+			$border_height += $config['padding'];
 		}
 	}
 	$border_location = $t . 'LR';
 
 	$pdf->setCellPaddings($config['padding'], 0, $config['padding'], 0);
-	$pdf->setMargins($config['margin_left'], $config['margin_top'], $config['margin_right']);
+	$pdf->SetMargins($config['margin_left'], $config['margin_top'], $config['margin_right']);
 	$pdf->SetAutoPageBreak(true, $config['margin_bottom']);
 	$pdf->AddPage();
+
+	$cell_width = $config['size'] + $config['padding'] * 2 + $code_margin_left + $code_margin_right;
 
 	/* Get the text height, if defined */
 	$pdf->getHeightStart();
 	if (!empty($config['text'])) {
 		// This is how our string will look like
-		$pdf->writeHTMLCell($config['size'], 0, '', '', $config['text'], 0, 2, true, true, 'C');
+		$pdf->MultiCell($cell_width, 0, $config['text'], 0, $config['text_align'], false, 2);
 	}
 	if ($config['show_numbers'] || $config['show_nicknames']) {
 		$m = parse_munzee_url($codes[0]);
@@ -266,13 +280,12 @@ if (!empty($_POST)) {
 			if (isset($m[3]) && $config['show_numbers']) {
 				$v .= ' #' . $m[3];
 			}
-			$pdf->Cell($config['size'], 0, $v, 0, 2, 'C', true);
+			$pdf->MultiCell($cell_width, 0, $v, 0, $config['text_align'], false, 2);
 		}
 	}
 	$text_height = $pdf->getHeightEnd();
 
 	$cell_height = $config['size'] + $text_height + $config['padding'] * 2 + $code_margin_top + $code_margin_bottom;
-	$cell_width = $config['size'] + $config['padding'] * 2 + $code_margin_left + $code_margin_right; 
 
 
 
@@ -296,39 +309,53 @@ if (!empty($_POST)) {
 		if (isset($image_path)) {
 			$w = $config['size'] + $code_margin_left + $code_margin_right;
 			$h = $config['size'] + $code_margin_top + $code_margin_bottom;
-			$pdf->Image($image_path, '', '', $w, $h, 'PNG');
-			$pdf->setY($y + $code_margin_top - $config['padding']);
-			$pdf->setX($x + $code_margin_left - $config['padding']);
+			$pdf->Image($image_path, $x + $config['padding'],
+				$y + $config['padding'], $w, $h, 'PNG');
+			$pdf->setY($y);
+			$pdf->setX($x);
 		}
 
 		/* Additional text on top */
 		if (!empty($config['text']) && $config['text_location'] == 'top') {
 			$border = $border_style ? Array('LTR' => $border_style) : 0;
-			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'], $border, 2, true, true, 'C');
+			$pdf->setCellPaddings('', $config['padding'], '', 0);
+			$pdf->MultiCell($cell_width, 0, $config['text'], $border,
+				$config['text_align'], true, 2);
 			$pdf->setX($x);
+			$barcode_y = $pdf->getY();
+		} else {
+			$barcode_y = $pdf->getY() + $config['padding'];
 		}
-		/* The barcode */
-		$barcode_y = $pdf->getY();
-		$pdf->setX($pdf->getX());
-		$s = $cell_width;
 		/* Draw a possible border */
+		$border = 0;
 		if ($border_style) {
-			$pdf->Cell($s, $s, '', Array($border_location => $border_style), 0, 'L', true);
-			$pdf->setX($x);
+			$border = Array($border_location => $border_style);
 		}
-		$s = $config['size'] + $config['padding'] * 2;
+		$pdf->Cell($cell_width, $border_height, '', $border, 0, 'L', $fill);
+		$pdf->setX($x);
+
+		/* This is internal margin of the attached image */
+		$pdf->setY($barcode_y + $code_margin_top);
+		$pdf->setX($x + $code_margin_left + $config['padding']);
+
+		/* The barcode */
+		$s = $config['size'];
 		$pdf->write2DBarcode($c, "QRCODE,L", '', '', $s, $s, $style, 'T', false);
-		$pdf->setY($barcode_y + $cell_width);
+		$pdf->setY($barcode_y + $s);
 		$pdf->setX($x);
 
 		/* Additional text on bottom */
 		if (!empty($config['text']) && $config['text_location'] == 'bottom') {
 			$border = Array('LRB' => $border_style);
+			$pdf->setCellPaddings('', 0, '', $config['padding']);
 			if ($config['show_numbers'] || $config['show_nicknames']) {
 				$border = Array('LR' => $border_style);
+			} else {
+				$pdf->setCellPaddings('', '', '', 0);
 			}
 			$border = $border_style ? $border : 0;
-			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'], $border, 2, true, true, 'C');
+			$pdf->MultiCell($cell_width, 0, $config['text'], $border,
+				$config['text_align'], true, 2);
 			$pdf->setX($x);
 		}
 		if ($config['show_numbers'] || $config['show_nicknames']) {
@@ -345,7 +372,9 @@ if (!empty($_POST)) {
 					$v .= '#' . $m[3];
 				}
 				$border = $border_style ? Array('LRB' => $border_style) : 0;
-				$pdf->Cell($cell_width, 0, $v, $border, 2, 'C', true);
+				$pdf->setCellPaddings('', 0, '', $config['padding']);
+				$pdf->MultiCell($cell_width, 0, $v, $border,
+					$config['text_align'], true, 2);
 			}
 		}
 		$pdf->setY($y);
@@ -453,6 +482,17 @@ input[type="number"] {
 			<input type="text" name="text" id="text"
 				value="<?php echo $config['text']; ?>" />
 			<br />
+			<label for="text">Text align:</label>
+			<select name="text_align" id="text_align">
+				<?php
+				foreach ($text_align AS $f => $label) {
+					print '<option value="' . $f . '"'
+						. ($config['text_align'] == $f ? ' selected="selected"' : '')
+						. '>' . $label . '</option>';
+				}
+				?>
+			</select>
+			<br />
 			<label for="text_location">Text location:</label>
 			<select name="text_location" id="text_location">
 				<?php
@@ -462,7 +502,8 @@ input[type="number"] {
 						. '>' . $label . '</option>';
 				}
 				?>
-			</select><br />
+			</select>
+			<br />
 			<label for="font_size">Font size:</label>
 			<input type="number" name="font_size" id="font_size"
 				value="<?php echo $config['font_size']; ?>" />
