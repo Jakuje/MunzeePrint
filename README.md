@@ -5,6 +5,7 @@ A simple script for printing your munzee QR codes. It is inspired by
 similar script on qr.ite.lt but it has several improvements:
 
  * The configuration is stored in cookies
+ * Possibility to use images on background
  * It is Open Source
 
 Where I can try it?

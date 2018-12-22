@@ -76,30 +76,34 @@ $text_location = Array(
 	'bottom' => 'Bottom',
 );
 
-$config = Array();
+/* Default configuration */
+$config = Array(
+	'format' => 'A4',
+	'units' => 'mm',
+	'size' => 18,
+	'padding' => 2,
+	'error_correction' => "L",
+	'text' => "230V",
+	'text_location' => "top",
+	'background_color' => "#ffffff",
+	'image' => "none",
+	'color' => "#000000",
+	'margin_left' => 5,
+	'margin_top' => 5,
+	'margin_right' => 5,
+	'margin_bottom' => 5,
+	'font_size' => 3,
+	'show_nicknames' => 0,
+	'show_numbers' => 0,
+	'cut_lines' => "none"
+);
 if (isset($_COOKIE['print_config'])) {
-	$config = (array) json_decode($_COOKIE['print_config']);
-} else {
-	/* Default configuration */
-	$config = Array(
-		'format' => 'A4',
-		'units' => 'mm',
-		'size' => 18,
-		'padding' => 2,
-		'error_correction' => "L",
-		'text' => "230V",
-		'text_location' => "top",
-		'background_color' => "#ffffff",
-		'color' => "#000000",
-		'margin_left' => 5,
-		'margin_top' => 5,
-		'margin_right' => 5,
-		'margin_bottom' => 5,
-		'font_size' => 3,
-		'show_nicknames' => 0,
-		'show_numbers' => 0,
-		'cut_lines' => "none"
-	);
+	$v = json_decode($_COOKIE['print_config']);
+	if (is_array((array)$v)) {
+		foreach ($v as $k => $v) {
+			$config[$k] = $v;
+		}
+	}
 }
 
 
@@ -130,6 +134,9 @@ if (!empty($_POST)) {
 	}
 	if (isset($_POST['background_color'])) {
 		$config['background_color'] = $_POST['background_color'];
+	}
+	if (isset($_POST['image'])) {
+		$config['image'] = $_POST['image'];
 	}
 	if (isset($_POST['color'])) {
 		$config['color'] = $_POST['color'];
@@ -190,17 +197,35 @@ if (!empty($_POST)) {
 			$style['fgcolor'] = Array($r, $g, $b);
 		}
 	}
-	$background_color = $config['background_color'];
-	if ($background_color && $background_color[0] == '#') {
-		$r = hexdec(substr($background_color, 1, 2));
-		$g = hexdec(substr($background_color, 3, 2));
-		$b = hexdec(substr($background_color, 5, 2));
-		if ($r >= 0 && $r < 256 &&
-			$g >= 0 && $g < 256 &&
-			$b >= 0 && $b < 256) {
-			$pdf->SetFillColor($r, $g, $b);
-			$style['bgcolor'] = Array($r, $g, $b);
+
+	$code_margin_top = 0;
+	$code_margin_bottom = 0;
+	$code_margin_left = 0;
+	$code_margin_right = 0;
+	if ($config['image'] == 'none') {
+		$background_color = $config['background_color'];
+		if ($background_color && $background_color[0] == '#') {
+			$r = hexdec(substr($background_color, 1, 2));
+			$g = hexdec(substr($background_color, 3, 2));
+			$b = hexdec(substr($background_color, 5, 2));
+			if ($r >= 0 && $r < 256 &&
+				$g >= 0 && $g < 256 &&
+				$b >= 0 && $b < 256) {
+				$pdf->SetFillColor($r, $g, $b);
+				$style['bgcolor'] = Array($r, $g, $b);
+			}
 		}
+	} elseif ($config['image'] == 'electro') {
+		/* This image does not have any place for text around the code.
+		 * Just hardcode some margins */
+		unset($config['text']);
+		$config['show_numbers'] = 0;
+		$config['show_nicknames'] = 0;
+		$image_path = 'images/electro.png';
+		$code_margin_top = $config['size'] + $config['size'] / 6;
+		$code_margin_bottom = $config['size'] / 6;
+		$code_margin_left = $config['size'] / 6;
+		$code_margin_right = $config['size'] / 6;
 	}
 
 	$border_style = NULL;
@@ -246,6 +271,9 @@ if (!empty($_POST)) {
 	}
 	$text_height = $pdf->getHeightEnd();
 
+	$cell_height = $config['size'] + $text_height + $config['padding'] * 2 + $code_margin_top + $code_margin_bottom;
+	$cell_width = $config['size'] + $config['padding'] * 2 + $code_margin_left + $code_margin_right; 
+
 
 
 	/* Create the page */
@@ -257,30 +285,40 @@ if (!empty($_POST)) {
 			continue;
 		}
 		/* Do we fit this line onto this page? */
-		if (($pdf->getY() + $text_height + $config['size'] + $config['padding']*2) > 0.35 * ($dim['h'] - $dim['tm'] - $dim['bm'])) {
+		if (($pdf->getY() + $cell_height) > 0.35 * ($dim['h'] - $dim['tm'] - $dim['bm'])) {
 			$pdf->AddPage();
 		}
 		/* This is where we start */
 		$y = $pdf->getY();
 		$x = $pdf->getX();
 
+		/* Background image */
+		if (isset($image_path)) {
+			$w = $config['size'] + $code_margin_left + $code_margin_right;
+			$h = $config['size'] + $code_margin_top + $code_margin_bottom;
+			$pdf->Image($image_path, '', '', $w, $h, 'PNG');
+			$pdf->setY($y + $code_margin_top - $config['padding']);
+			$pdf->setX($x + $code_margin_left - $config['padding']);
+		}
+
 		/* Additional text on top */
 		if (!empty($config['text']) && $config['text_location'] == 'top') {
 			$border = $border_style ? Array('LTR' => $border_style) : 0;
-			$pdf->writeHTMLCell($config['size'] + $config['padding']*2, 0, '', '', $config['text'], $border, 2, true, true, 'C');
+			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'], $border, 2, true, true, 'C');
 			$pdf->setX($x);
 		}
 		/* The barcode */
 		$barcode_y = $pdf->getY();
 		$pdf->setX($pdf->getX());
-		$s = $config['size'] + $config['padding'] * 2;
+		$s = $cell_width;
 		/* Draw a possible border */
 		if ($border_style) {
 			$pdf->Cell($s, $s, '', Array($border_location => $border_style), 0, 'L', true);
 			$pdf->setX($x);
 		}
+		$s = $config['size'] + $config['padding'] * 2;
 		$pdf->write2DBarcode($c, "QRCODE,L", '', '', $s, $s, $style, 'T', false);
-		$pdf->setY($barcode_y + $config['size'] + $config['padding']*2);
+		$pdf->setY($barcode_y + $cell_width);
 		$pdf->setX($x);
 
 		/* Additional text on bottom */
@@ -290,7 +328,7 @@ if (!empty($_POST)) {
 				$border = Array('LR' => $border_style);
 			}
 			$border = $border_style ? $border : 0;
-			$pdf->writeHTMLCell($config['size'] + $config['padding']*2, 0, '', '', $config['text'], $border, 2, true, true, 'C');
+			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'], $border, 2, true, true, 'C');
 			$pdf->setX($x);
 		}
 		if ($config['show_numbers'] || $config['show_nicknames']) {
@@ -307,13 +345,13 @@ if (!empty($_POST)) {
 					$v .= '#' . $m[3];
 				}
 				$border = $border_style ? Array('LRB' => $border_style) : 0;
-				$pdf->Cell($config['size'] + $config['padding']*2, 0, $v, $border, 2, 'C', true);
+				$pdf->Cell($cell_width, 0, $v, $border, 2, 'C', true);
 			}
 		}
 		$pdf->setY($y);
-		$pdf->setX($x + $config['size'] + $config['padding']*2);
-		if (($pdf->getX() + $config['size']) > 0.35 * ($width - $dim['lm'] - $dim['rm'])) {
-			$pdf->Ln($config['size'] + $text_height + $config['padding']*2);
+		$pdf->setX($x + $cell_width);
+		if (($pdf->getX() + $cell_width) > 0.35 * ($width - $dim['lm'] - $dim['rm'])) {
+			$pdf->Ln($cell_height);
 		}
 	}
 
@@ -433,10 +471,6 @@ input[type="number"] {
 			<input type="color" name="color" id="color"
 				value="<?php echo $config['color']; ?>" />
 			<br />
-			<label for="background_color">Background color:</label>
-			<input type="color" name="background_color" id="background_color"
-				value="<?php echo $config['background_color']; ?>" />
-			<br />
 			<label for="show_numbers">Show numbers:</label>
 			<input type="checkbox" name="show_numbers" id="show_numbers"<?php
 				if ($config['show_numbers']) { echo ' checked="checked"'; }
@@ -446,6 +480,17 @@ input[type="number"] {
 			<input type="checkbox" name="show_nicknames" id="show_nicknames"<?php
 				if ($config['show_nicknames']) { echo ' checked="checked"'; }
 				?>>
+		</fieldset>
+		<fieldset>
+			<legend>Background image or color</legend>
+			<input type="radio" name="image" id="image_none" value="none"<?php
+				if ($config['image'] == 'none') { echo ' checked="checked"'; } ?> />
+			<label for="image_none">Color:</label>
+			<input type="color" name="background_color" id="background_color"
+				value="<?php echo $config['background_color']; ?>" />
+			<input type="radio" name="image" id="image_electro" value="electro"<?php
+				if ($config['image'] == 'electro') { echo ' checked="checked"'; } ?> />
+			<label for="image_electro"><img src="images/electro.png" width="50" /></label>
 		</fieldset>
 		<fieldset>
 			<legend>Munzee Codes:</legend>
