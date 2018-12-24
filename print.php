@@ -165,12 +165,10 @@ if (!empty($_POST)) {
 	if (isset($_POST['font_size'])) {
 		$config['font_size'] = $_POST['font_size'];
 	}
-	if (isset($_POST['show_nicknames'])) {
-		$config['show_nicknames'] = ($_POST['show_nicknames'] == 'on');
-	}
-	if (isset($_POST['show_numbers'])) {
-		$config['show_numbers'] = ($_POST['show_numbers'] == 'on');
-	}
+	$config['show_nicknames'] = (isset($_POST['show_nicknames'])
+		&& $_POST['show_nicknames'] == 'on');
+	$config['show_numbers'] = (isset($_POST['show_numbers'])
+		&&$_POST['show_numbers'] == 'on');
 	if (isset($_POST['cut_lines'])) {
 		$config['cut_lines'] = $_POST['cut_lines'];
 	}
@@ -277,8 +275,11 @@ if (!empty($_POST)) {
 			if (isset($m[2]) && $config['show_nicknames']) {
 				$v .= $m[2];
 			}
-			if (isset($m[3]) && $config['show_numbers']) {
-				$v .= ' #' . $m[3];
+			if ($config['show_nicknames'] && $config['show_numbers']) {
+				$v .= ' ';
+			}
+			if (!empty($m[3]) && $config['show_numbers']) {
+				$v .= '#' . $m[3];
 			}
 			$pdf->MultiCell($cell_width, 0, $v, 0, $config['text_align'], false, 2);
 		}
@@ -368,7 +369,7 @@ if (!empty($_POST)) {
 				if ($config['show_nicknames'] && $config['show_numbers']) {
 					$v .= ' ';
 				}
-				if (isset($m[3]) && $config['show_numbers']) {
+				if (!empty($m[3]) && $config['show_numbers']) {
 					$v .= '#' . $m[3];
 				}
 				$border = $border_style ? Array('LRB' => $border_style) : 0;
