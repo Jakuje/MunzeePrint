@@ -88,7 +88,7 @@ $config = Array(
 	'size' => 18,
 	'padding' => 2,
 	'error_correction' => "L",
-	'text' => "230V",
+	'text' => "!<br>230V",
 	'text_align' => "C",
 	'text_location' => "top",
 	'background_color' => "#ffffff",
@@ -266,7 +266,8 @@ if (!empty($_POST)) {
 	$pdf->getHeightStart();
 	if (!empty($config['text'])) {
 		// This is how our string will look like
-		$pdf->MultiCell($cell_width, 0, $config['text'], 0, $config['text_align'], false, 2);
+		//$pdf->MultiCell($cell_width, 0, $config['text'], 0, $config['text_align'], false, 2);
+		$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'], 0, 2, $fill, true, $config['text_align']);
 	}
 	if ($config['show_numbers'] || $config['show_nicknames']) {
 		$m = parse_munzee_url($codes[0]);
@@ -320,8 +321,10 @@ if (!empty($_POST)) {
 		if (!empty($config['text']) && $config['text_location'] == 'top') {
 			$border = $border_style ? Array('LTR' => $border_style) : 0;
 			$pdf->setCellPaddings('', $config['padding'], '', 0);
-			$pdf->MultiCell($cell_width, 0, $config['text'], $border,
-				$config['text_align'], true, 2);
+			//$pdf->MultiCell($cell_width, 0, $config['text'], $border,
+			//	$config['text_align'], true, 2);
+			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'],
+				$border, 2, $fill, true, $config['text_align']);
 			$pdf->setX($x);
 			$barcode_y = $pdf->getY();
 		} else {
@@ -355,8 +358,10 @@ if (!empty($_POST)) {
 				$pdf->setCellPaddings('', '', '', 0);
 			}
 			$border = $border_style ? $border : 0;
-			$pdf->MultiCell($cell_width, 0, $config['text'], $border,
-				$config['text_align'], true, 2);
+			//$pdf->MultiCell($cell_width, 0, $config['text'], $border,
+			//	$config['text_align'], true, 2);
+			$pdf->writeHTMLCell($cell_width, 0, '', '', $config['text'],
+				$border, 2, $fill, true, $config['text_align']);
 			$pdf->setX($x);
 		}
 		if ($config['show_numbers'] || $config['show_nicknames']) {
