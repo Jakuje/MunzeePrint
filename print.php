@@ -54,7 +54,7 @@ function parse_munzee_url($url) {
 	return $matches;
 }
 
-$formats = Array('A5', 'A4', 'A3', 'A2', 'LETTER');
+$formats = Array('A6', 'A5', 'A4', 'A3', 'A2', 'LETTER');
 $units = Array(
 	'mm' => 'milimeters',
 	'cm' => 'centimeters',
